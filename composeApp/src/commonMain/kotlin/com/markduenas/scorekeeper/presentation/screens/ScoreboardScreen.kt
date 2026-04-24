@@ -24,10 +24,14 @@ import com.markduenas.scorekeeper.data.models.Participant
 import com.markduenas.scorekeeper.data.models.Scoreboard
 import com.markduenas.scorekeeper.data.models.ScoringMode
 import com.markduenas.scorekeeper.data.models.StructureType
+import com.markduenas.scorekeeper.data.shareText
 import com.markduenas.scorekeeper.presentation.components.CustomScoreDialog
 import com.markduenas.scorekeeper.presentation.components.ParticipantCard
 import com.markduenas.scorekeeper.presentation.components.formatScore
 import com.markduenas.scorekeeper.presentation.viewmodel.ScoreboardViewModel
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.core.parameter.parametersOf
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,6 +106,32 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
                                     text = { Text("End Game") },
                                     onClick = { viewModel.completeGame(); navigator.pop(); showMenu = false },
                                     leadingIcon = { Icon(Icons.Default.Flag, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Share Scores") },
+                                    onClick = {
+                                        showMenu = false
+                                        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                                        val dateStr = "${now.year}-${now.monthNumber.toString().padStart(2,'0')}-${now.dayOfMonth.toString().padStart(2,'0')}"
+                                        val sorted = when (scoreboard.scoringMode) {
+                                            ScoringMode.HIGHEST_WINS -> scoreboard.participants.sortedByDescending { it.score }
+                                            ScoringMode.LOWEST_WINS -> scoreboard.participants.sortedBy { it.score }
+                                            ScoringMode.NO_WINNER -> scoreboard.participants
+                                        }
+                                        val lines = sorted.mapIndexed { i, p ->
+                                            "${i + 1}. ${p.name} — ${formatScore(p.score)} pts"
+                                        }.joinToString("\n")
+                                        val shareContent = buildString {
+                                            appendLine("🏆 ${scoreboard.name.ifEmpty { "Scoreboard" }}")
+                                            appendLine(dateStr)
+                                            appendLine()
+                                            appendLine(lines)
+                                            appendLine()
+                                            append("Shared from Scorekeeper App")
+                                        }
+                                        shareText(shareContent)
+                                    },
+                                    leadingIcon = { Icon(Icons.Default.Share, null) }
                                 )
                             }
                         }

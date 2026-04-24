@@ -6,4 +6,5 @@ import org.koin.dsl.module
 
 val androidModule = module {
     single { DatabaseDriverFactory(androidContext()) }
+    single<android.content.Context> { androidContext() }
 }
