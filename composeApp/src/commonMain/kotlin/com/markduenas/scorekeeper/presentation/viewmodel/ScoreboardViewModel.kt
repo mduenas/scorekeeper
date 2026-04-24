@@ -26,6 +26,9 @@ class ScoreboardViewModel(
     private val _uiState = MutableStateFlow(ScoreboardUiState())
     val uiState: StateFlow<ScoreboardUiState> = _uiState
 
+    // Track winner IDs that the user has already dismissed so we don't re-show
+    private val dismissedWinnerIds = mutableSetOf<String>()
+
     init {
         load()
     }
@@ -36,10 +39,12 @@ class ScoreboardViewModel(
             val scoreboard = repository.getScoreboard(scoreboardId)
             val events = repository.getScoreEvents(scoreboardId)
             val winner = detectWinner(scoreboard)
+            val showDialog = winner != null && winner.id !in dismissedWinnerIds
             _uiState.value = ScoreboardUiState(
                 scoreboard = scoreboard,
                 scoreEvents = events,
-                winner = winner
+                winner = winner,
+                showWinnerDialog = showDialog
             )
         }
     }
@@ -96,6 +101,7 @@ class ScoreboardViewModel(
     }
 
     fun dismissWinnerDialog() {
+        _uiState.value.winner?.id?.let { dismissedWinnerIds.add(it) }
         _uiState.value = _uiState.value.copy(showWinnerDialog = false)
     }
 

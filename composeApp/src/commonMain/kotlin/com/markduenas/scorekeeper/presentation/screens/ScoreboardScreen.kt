@@ -2,6 +2,7 @@ package com.markduenas.scorekeeper.presentation.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
@@ -50,6 +52,18 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
                 CircularProgressIndicator()
             }
             return
+        }
+
+        // Winner dialog
+        if (state.showWinnerDialog && state.winner != null) {
+            WinnerDialog(
+                winner = state.winner!!,
+                onContinue = { viewModel.dismissWinnerDialog() },
+                onNewGame = {
+                    viewModel.dismissWinnerDialog()
+                    navigator.popUntilRoot()
+                }
+            )
         }
 
         customScoreTarget?.let { participant ->
@@ -144,24 +158,150 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
                 ScoringMode.LOWEST_WINS -> scoreboard.participants.minByOrNull { it.score }
                 ScoringMode.NO_WINNER -> null
             }
-            when {
-                scoreboard.participants.size <= 2 -> LargeScoreLayout(
-                    scoreboard = scoreboard, leader = leader, padding = padding,
-                    onIncrement = { p -> viewModel.adjustScore(p, scoreboard.defaultIncrement) },
-                    onDecrement = { p -> viewModel.adjustScore(p, -scoreboard.defaultIncrement) },
-                    onLongPress = { p -> customScoreTarget = p }
+
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val isLandscape = maxWidth >= maxHeight
+                if (isLandscape) {
+                    LandscapeScoreLayout(
+                        scoreboard = scoreboard,
+                        leader = leader,
+                        padding = padding,
+                        onIncrement = { p -> viewModel.adjustScore(p, scoreboard.defaultIncrement) },
+                        onDecrement = { p -> viewModel.adjustScore(p, -scoreboard.defaultIncrement) },
+                        onLongPress = { p -> customScoreTarget = p }
+                    )
+                } else {
+                    when {
+                        scoreboard.participants.size <= 2 -> LargeScoreLayout(
+                            scoreboard = scoreboard, leader = leader, padding = padding,
+                            onIncrement = { p -> viewModel.adjustScore(p, scoreboard.defaultIncrement) },
+                            onDecrement = { p -> viewModel.adjustScore(p, -scoreboard.defaultIncrement) },
+                            onLongPress = { p -> customScoreTarget = p }
+                        )
+                        scoreboard.participants.size <= 6 -> GridScoreLayout(
+                            scoreboard = scoreboard, leader = leader, padding = padding,
+                            onIncrement = { p -> viewModel.adjustScore(p, scoreboard.defaultIncrement) },
+                            onDecrement = { p -> viewModel.adjustScore(p, -scoreboard.defaultIncrement) },
+                            onLongPress = { p -> customScoreTarget = p }
+                        )
+                        else -> ListScoreLayout(
+                            scoreboard = scoreboard, leader = leader, padding = padding,
+                            onIncrement = { p -> viewModel.adjustScore(p, scoreboard.defaultIncrement) },
+                            onDecrement = { p -> viewModel.adjustScore(p, -scoreboard.defaultIncrement) },
+                            onLongPress = { p -> customScoreTarget = p }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WinnerDialog(
+    winner: Participant,
+    onContinue: () -> Unit,
+    onNewGame: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onContinue,
+        icon = {
+            Text("🏆", fontSize = 48.sp)
+        },
+        title = {
+            Text(
+                text = "${winner.name} Wins!",
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Text(
+                text = "Final score: ${formatScore(winner.score)}",
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(onClick = onNewGame) {
+                Text("New Game")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onContinue) {
+                Text("Continue")
+            }
+        }
+    )
+}
+
+@Composable
+fun LandscapeScoreLayout(
+    scoreboard: Scoreboard,
+    leader: Participant?,
+    padding: PaddingValues,
+    onIncrement: (Participant) -> Unit,
+    onDecrement: (Participant) -> Unit,
+    onLongPress: (Participant) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Left column: game info
+        Column(
+            modifier = Modifier
+                .width(160.dp)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = scoreboard.name.ifEmpty { "Scoreboard" },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+            if (scoreboard.structureType != StructureType.NONE) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "${scoreboard.structureLabel} ${scoreboard.currentStructureIndex + 1}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
-                scoreboard.participants.size <= 6 -> GridScoreLayout(
-                    scoreboard = scoreboard, leader = leader, padding = padding,
-                    onIncrement = { p -> viewModel.adjustScore(p, scoreboard.defaultIncrement) },
-                    onDecrement = { p -> viewModel.adjustScore(p, -scoreboard.defaultIncrement) },
-                    onLongPress = { p -> customScoreTarget = p }
+            }
+            if (leader != null && scoreboard.scoringMode != ScoringMode.NO_WINNER) {
+                Spacer(Modifier.height(12.dp))
+                Text("👑 Leading", style = MaterialTheme.typography.labelSmall)
+                Text(
+                    text = leader.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
                 )
-                else -> ListScoreLayout(
-                    scoreboard = scoreboard, leader = leader, padding = padding,
-                    onIncrement = { p -> viewModel.adjustScore(p, scoreboard.defaultIncrement) },
-                    onDecrement = { p -> viewModel.adjustScore(p, -scoreboard.defaultIncrement) },
-                    onLongPress = { p -> customScoreTarget = p }
+            }
+        }
+
+        // Right column: participant cards in horizontal row
+        LazyRow(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 4.dp)
+        ) {
+            items(scoreboard.participants) { participant ->
+                ParticipantCard(
+                    participant = participant,
+                    increment = scoreboard.defaultIncrement,
+                    isLeader = leader?.id == participant.id && scoreboard.scoringMode != ScoringMode.NO_WINNER,
+                    onIncrement = { onIncrement(participant) },
+                    onDecrement = { onDecrement(participant) },
+                    onLongPress = { onLongPress(participant) },
+                    modifier = Modifier.width(180.dp).fillMaxHeight()
                 )
             }
         }
