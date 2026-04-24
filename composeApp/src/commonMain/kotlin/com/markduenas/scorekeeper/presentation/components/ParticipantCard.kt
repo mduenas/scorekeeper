@@ -1,6 +1,8 @@
 package com.markduenas.scorekeeper.presentation.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -12,7 +14,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.markduenas.scorekeeper.data.models.Participant
+import androidx.compose.foundation.layout.FlowRow
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ParticipantCard(
     participant: Participant,
@@ -21,9 +25,10 @@ fun ParticipantCard(
     onIncrement: () -> Unit,
     onDecrement: () -> Unit,
     onLongPress: () -> Unit = {},
+    customIncrements: List<Double> = emptyList(),
+    onAdjust: ((Double) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    // Use a simple color based on the participant's color field (fallback to primary container)
     val cardBorderColor = MaterialTheme.colorScheme.primary
 
     Card(
@@ -53,33 +58,100 @@ fun ParticipantCard(
                 color = if (participant.score < 0) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurface
             )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                FilledTonalButton(
-                    onClick = onDecrement,
-                    modifier = Modifier.size(52.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    shape = RoundedCornerShape(12.dp)
+
+            if (customIncrements.isNotEmpty() && onAdjust != null) {
+                // Multi-increment buttons row: long-press to subtract
+                IncrementButtonsRow(
+                    increments = customIncrements,
+                    onAdjust = onAdjust,
+                    onLongPress = onLongPress
+                )
+            } else {
+                // Default single +/- buttons
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    FilledTonalButton(
+                        onClick = onDecrement,
+                        modifier = Modifier.size(52.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    }
+                    FilledTonalButton(
+                        onClick = onIncrement,
+                        modifier = Modifier.size(52.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
+                Text(
+                    text = "±${formatScore(increment)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun IncrementButtonsRow(
+    increments: List<Double>,
+    onAdjust: (Double) -> Unit,
+    onLongPress: () -> Unit = {},
+    compact: Boolean = false
+) {
+    val buttonSize = if (compact) 36.dp else 44.dp
+    val fontSize = if (compact) 11.sp else 13.sp
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        // Positive row
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            increments.forEach { inc ->
                 FilledTonalButton(
-                    onClick = onIncrement,
-                    modifier = Modifier.size(52.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    shape = RoundedCornerShape(12.dp)
+                    onClick = { onAdjust(inc) },
+                    modifier = Modifier.height(buttonSize),
+                    contentPadding = PaddingValues(horizontal = if (compact) 6.dp else 8.dp, vertical = 0.dp),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("+${formatScore(inc)}", fontSize = fontSize, fontWeight = FontWeight.SemiBold)
                 }
             }
-            Text(
-                text = "±${formatScore(increment)}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
+        // Negative row
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            increments.forEach { inc ->
+                OutlinedButton(
+                    onClick = { onAdjust(-inc) },
+                    modifier = Modifier.height(buttonSize),
+                    contentPadding = PaddingValues(horizontal = if (compact) 6.dp else 8.dp, vertical = 0.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("-${formatScore(inc)}", fontSize = fontSize, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        Text(
+            text = "long press score for custom",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
