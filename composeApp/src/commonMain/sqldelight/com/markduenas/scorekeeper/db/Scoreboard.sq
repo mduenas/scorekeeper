@@ -1,0 +1,46 @@
+CREATE TABLE Scoreboard (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    templateId TEXT,
+    scoringMode TEXT NOT NULL DEFAULT 'highest_wins',
+    negativeScoresAllowed INTEGER NOT NULL DEFAULT 1,
+    decimalScoresAllowed INTEGER NOT NULL DEFAULT 0,
+    defaultIncrement REAL NOT NULL DEFAULT 1.0,
+    customIncrements TEXT NOT NULL DEFAULT '[]',
+    structureType TEXT NOT NULL DEFAULT 'none',
+    structureLabel TEXT NOT NULL DEFAULT 'Round',
+    currentStructureIndex INTEGER NOT NULL DEFAULT 0,
+    winCondition TEXT NOT NULL DEFAULT 'none',
+    notes TEXT NOT NULL DEFAULT ''
+);
+
+selectAll:
+SELECT * FROM Scoreboard ORDER BY updatedAt DESC;
+
+selectById:
+SELECT * FROM Scoreboard WHERE id = ?;
+
+selectByStatus:
+SELECT * FROM Scoreboard WHERE status = ? ORDER BY updatedAt DESC;
+
+insert:
+INSERT OR REPLACE INTO Scoreboard VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateMeta:
+UPDATE Scoreboard SET name=?, updatedAt=?, status=?, scoringMode=?,
+    negativeScoresAllowed=?, decimalScoresAllowed=?, defaultIncrement=?,
+    customIncrements=?, structureType=?, structureLabel=?,
+    currentStructureIndex=?, winCondition=?, notes=?
+WHERE id=?;
+
+updateStructureIndex:
+UPDATE Scoreboard SET currentStructureIndex=?, updatedAt=? WHERE id=?;
+
+updateStatus:
+UPDATE Scoreboard SET status=?, updatedAt=? WHERE id=?;
+
+delete:
+DELETE FROM Scoreboard WHERE id=?;
