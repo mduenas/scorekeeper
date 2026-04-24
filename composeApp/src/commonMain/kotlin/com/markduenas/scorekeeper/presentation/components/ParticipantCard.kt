@@ -99,7 +99,6 @@ fun ParticipantCard(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun IncrementButtonsRow(
     increments: List<Double>,
@@ -107,51 +106,35 @@ fun IncrementButtonsRow(
     onLongPress: () -> Unit = {},
     compact: Boolean = false
 ) {
-    val buttonSize = if (compact) 36.dp else 44.dp
+    val buttonHeight = if (compact) 36.dp else 44.dp
     val fontSize = if (compact) 11.sp else 13.sp
+    val hPad = if (compact) 6.dp else 8.dp
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // Positive row
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            increments.forEach { inc ->
+        increments.forEach { inc ->
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                OutlinedButton(
+                    onClick = { onAdjust(-inc) },
+                    modifier = Modifier.height(buttonHeight),
+                    contentPadding = PaddingValues(horizontal = hPad, vertical = 0.dp),
+                    shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp, topEnd = 2.dp, bottomEnd = 2.dp)
+                ) {
+                    Text("-${formatScore(inc)}", fontSize = fontSize, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 FilledTonalButton(
                     onClick = { onAdjust(inc) },
-                    modifier = Modifier.height(buttonSize),
-                    contentPadding = PaddingValues(horizontal = if (compact) 6.dp else 8.dp, vertical = 0.dp),
-                    shape = RoundedCornerShape(8.dp)
+                    modifier = Modifier.height(buttonHeight),
+                    contentPadding = PaddingValues(horizontal = hPad, vertical = 0.dp),
+                    shape = RoundedCornerShape(topStart = 2.dp, bottomStart = 2.dp, topEnd = 8.dp, bottomEnd = 8.dp)
                 ) {
                     Text("+${formatScore(inc)}", fontSize = fontSize, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
-        // Negative row
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            increments.forEach { inc ->
-                OutlinedButton(
-                    onClick = { onAdjust(-inc) },
-                    modifier = Modifier.height(buttonSize),
-                    contentPadding = PaddingValues(horizontal = if (compact) 6.dp else 8.dp, vertical = 0.dp),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text("-${formatScore(inc)}", fontSize = fontSize, fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-        Text(
-            text = "long press score for custom",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 
