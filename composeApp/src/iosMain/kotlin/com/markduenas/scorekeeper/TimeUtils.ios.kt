@@ -11,6 +11,6 @@ import platform.posix.timespec
 @OptIn(ExperimentalForeignApi::class)
 actual fun currentTimeMs(): Long = memScoped {
     val ts = alloc<timespec>()
-    clock_gettime(CLOCK_REALTIME, ts.ptr)
+    clock_gettime(CLOCK_REALTIME.toUInt(), ts.ptr)
     ts.tv_sec * 1000L + ts.tv_nsec / 1_000_000L
 }
