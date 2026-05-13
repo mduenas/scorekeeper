@@ -3,7 +3,7 @@ package com.markduenas.scorekeeper.data.repository
 import com.markduenas.scorekeeper.data.DatabaseDriverFactory
 import com.markduenas.scorekeeper.data.models.*
 import com.markduenas.scorekeeper.db.ScorekeeperDatabase
-import kotlinx.datetime.Clock
+import com.markduenas.scorekeeper.currentTimeMs
 
 class ScorekeeperRepository(driverFactory: DatabaseDriverFactory) {
 
@@ -34,7 +34,7 @@ class ScorekeeperRepository(driverFactory: DatabaseDriverFactory) {
     fun updateScoreboardMeta(scoreboard: Scoreboard) {
         db.scoreboardQueries.updateMeta(
             name = scoreboard.name,
-            updatedAt = Clock.System.now().toEpochMilliseconds(),
+            updatedAt = currentTimeMs(),
             status = scoreboard.status.name.lowercase(),
             scoringMode = scoreboard.scoringMode.name.lowercase(),
             negativeScoresAllowed = if (scoreboard.negativeScoresAllowed) 1L else 0L,
@@ -60,7 +60,7 @@ class ScorekeeperRepository(driverFactory: DatabaseDriverFactory) {
     fun undoLastEvent(scoreboardId: String) {
         val last = db.scoreEventQueries.selectActiveByScoreboard(scoreboardId)
             .executeAsList().firstOrNull() ?: return
-        db.scoreEventQueries.markUndone(Clock.System.now().toEpochMilliseconds(), last.id)
+        db.scoreEventQueries.markUndone(currentTimeMs(), last.id)
         db.participantQueries.updateScore(last.previousScore, last.participantId)
     }
 
@@ -82,14 +82,14 @@ class ScorekeeperRepository(driverFactory: DatabaseDriverFactory) {
     fun advanceStructure(scoreboardId: String, newIndex: Int) =
         db.scoreboardQueries.updateStructureIndex(
             newIndex.toLong(),
-            Clock.System.now().toEpochMilliseconds(),
+            currentTimeMs(),
             scoreboardId
         )
 
     fun completeScoreboard(scoreboardId: String) =
         db.scoreboardQueries.updateStatus(
             "completed",
-            Clock.System.now().toEpochMilliseconds(),
+            currentTimeMs(),
             scoreboardId
         )
 
@@ -98,4 +98,24 @@ class ScorekeeperRepository(driverFactory: DatabaseDriverFactory) {
         db.participantQueries.deleteByScoreboard(id)
         db.scoreboardQueries.delete(id)
     }
+
+    // User Templates
+    fun getUserTemplates(): List<Template> =
+        db.userTemplateQueries.selectAll().executeAsList().map { it.toDomain() }
+
+    fun saveUserTemplate(template: Template, pendingCommunityShare: Boolean = false) {
+        val t = template.toDb(currentTimeMs(), pendingCommunityShare)
+        db.userTemplateQueries.insert(t.id, t.name, t.category, t.defaultParticipantCount,
+            t.scoringMode, t.defaultIncrement, t.customIncrements, t.structureType,
+            t.structureLabel, t.winCondition, t.createdAt, t.pendingCommunityShare)
+    }
+
+    fun getPendingCommunityShares(): List<Template> =
+        db.userTemplateQueries.selectPendingCommunityShare().executeAsList().map { it.toDomain() }
+
+    fun clearPendingCommunityShare(id: String) =
+        db.userTemplateQueries.clearPendingCommunityShare(id)
+
+    fun deleteUserTemplate(id: String) =
+        db.userTemplateQueries.delete(id)
 }

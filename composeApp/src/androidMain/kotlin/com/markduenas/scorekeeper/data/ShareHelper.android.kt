@@ -5,11 +5,12 @@ import android.content.Context
 import android.content.Intent
 
 @SuppressLint("StaticFieldLeak")
-private var appContext: Context? = null
+internal var appContext: Context? = null
 
 fun initShareHelper(context: Context) {
     appContext = context.applicationContext
 }
+
 
 actual fun shareText(text: String) {
     val context = appContext ?: return

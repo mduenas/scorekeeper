@@ -1,12 +1,11 @@
 package com.markduenas.scorekeeper.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.markduenas.scorekeeper.data.BuiltInTemplates
 import com.markduenas.scorekeeper.data.models.Scoreboard
 import com.markduenas.scorekeeper.data.models.Template
+import com.markduenas.scorekeeper.data.repository.FirestoreRepository
 import com.markduenas.scorekeeper.data.repository.ScorekeeperRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,16 +16,26 @@ data class HomeUiState(
     val isLoading: Boolean = false
 )
 
-class HomeViewModel(private val repository: ScorekeeperRepository) : ScreenModel {
+class HomeViewModel(
+    private val repository: ScorekeeperRepository,
+    private val firestoreRepository: FirestoreRepository
+) : ScreenModel {
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
 
-    val templates: List<Template> = BuiltInTemplates.all
-    val templateCategories = BuiltInTemplates.categories
+    private val _userTemplates = MutableStateFlow<List<Template>>(emptyList())
+    val userTemplates: StateFlow<List<Template>> = _userTemplates
+
+    private val _communityTemplates = MutableStateFlow<List<Template>>(emptyList())
+    val communityTemplates: StateFlow<List<Template>> = _communityTemplates
+
+    val builtInCategories = BuiltInTemplates.categories
 
     init {
         loadScoreboards()
+        loadUserTemplates()
+        loadCommunityTemplates()
     }
 
     fun loadScoreboards() {
@@ -37,10 +46,29 @@ class HomeViewModel(private val repository: ScorekeeperRepository) : ScreenModel
         }
     }
 
+    fun loadUserTemplates() {
+        screenModelScope.launch {
+            _userTemplates.value = repository.getUserTemplates()
+        }
+    }
+
+    fun loadCommunityTemplates() {
+        screenModelScope.launch {
+            _communityTemplates.value = firestoreRepository.getCommunityTemplates()
+        }
+    }
+
     fun deleteScoreboard(id: String) {
         screenModelScope.launch {
             repository.deleteScoreboard(id)
             loadScoreboards()
+        }
+    }
+
+    fun deleteUserTemplate(id: String) {
+        screenModelScope.launch {
+            repository.deleteUserTemplate(id)
+            loadUserTemplates()
         }
     }
 }

@@ -17,6 +17,8 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.markduenas.scorekeeper.data.AnalyticsService
+import org.koin.compose.koinInject
 
 data class AppPromo(
     val emoji: String,
@@ -30,11 +32,21 @@ val markApps = listOf(
     AppPromo("🍳", "Recipeez", "Import recipes from any URL using on-device AI. Meal planning and shopping lists.",
         "https://apps.apple.com/us/app/recipeez/id6748916547",
         "https://play.google.com/store/apps/details?id=com.markduenas.recipes"),
-    AppPromo("🏡", "Homesteader", "Track cattle, chickens, pigs, and livestock with health records and breeding.", "", ""),
-    AppPromo("🎵", "PracticeFlow", "Track practice sessions for music, sports, or any skill.", "", ""),
-    AppPromo("🏠", "EasyCapRate", "Real estate cap rate calculator for investors.", "", ""),
-    AppPromo("π", "Pi Generator", "Generate and explore digits of Pi.", "", ""),
-    AppPromo("📖", "Markdown Viewer", "View any Markdown file beautifully. Free.", "", ""),
+    AppPromo("🐄", "Steady Hand", "Track cattle, chickens, pigs, and livestock with health records and breeding.",
+        "https://apps.apple.com/us/app/steady-hand/id6758530069",
+        "https://play.google.com/store/apps/details?id=com.markduenas.homesteader"),
+    AppPromo("🎵", "PracticeFlow", "Track practice sessions for music, sports, or any skill.",
+        "https://apps.apple.com/us/app/practiceflow/id6757249333",
+        "https://play.google.com/store/apps/details?id=com.markduenas.practiceflow"),
+    AppPromo("🏠", "EasyCapRate", "Real estate cap rate calculator for investors.",
+        "https://apps.apple.com/us/app/easy-cap-rate-calculator/id1451570554",
+        "https://play.google.com/store/apps/details?id=com.markduenas.easycaprate"),
+    AppPromo("π", "Pi Generator", "Generate and explore digits of Pi.",
+        "https://apps.apple.com/us/app/pi-generator/id1083533056",
+        "https://play.google.com/store/apps/details?id=com.markduenas.android.apigen"),
+    AppPromo("🪟", "Windule", "Window cleaning business manager — scheduling, routing, and invoicing.",
+        "https://apps.apple.com/us/app/windule-window-cleaning/id6757824315",
+        "https://play.google.com/store/apps/details?id=com.markduenas.windowschedule"),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +55,7 @@ class MoreAppsScreen : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val uriHandler = LocalUriHandler.current
+        val analytics: AnalyticsService = koinInject()
 
         Scaffold(
             topBar = {
@@ -74,8 +87,18 @@ class MoreAppsScreen : Screen {
                 items(markApps) { app ->
                     AppPromoCard(
                         app = app,
-                        onIosClick = { if (app.iosUrl.isNotEmpty()) uriHandler.openUri(app.iosUrl) },
-                        onAndroidClick = { if (app.androidUrl.isNotEmpty()) uriHandler.openUri(app.androidUrl) }
+                        onIosClick = {
+                            if (app.iosUrl.isNotEmpty()) {
+                                analytics.logAppLinkTap(app.name, "ios")
+                                uriHandler.openUri(app.iosUrl)
+                            }
+                        },
+                        onAndroidClick = {
+                            if (app.androidUrl.isNotEmpty()) {
+                                analytics.logAppLinkTap(app.name, "android")
+                                uriHandler.openUri(app.androidUrl)
+                            }
+                        }
                     )
                 }
             }

@@ -32,7 +32,8 @@ import com.markduenas.scorekeeper.presentation.components.IncrementButtonsRow
 import com.markduenas.scorekeeper.presentation.components.ParticipantCard
 import com.markduenas.scorekeeper.presentation.components.formatScore
 import com.markduenas.scorekeeper.presentation.viewmodel.ScoreboardViewModel
-import kotlinx.datetime.Clock
+import com.markduenas.scorekeeper.currentTimeMs
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.core.parameter.parametersOf
@@ -46,6 +47,22 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
         val state by viewModel.uiState.collectAsState()
         var showMenu by remember { mutableStateOf(false) }
         var customScoreTarget by remember { mutableStateOf<Participant?>(null) }
+        var showSaveTemplateDialog by remember { mutableStateOf(false) }
+        val snackbarHostState = remember { SnackbarHostState() }
+
+        // Show feedback when template is saved or Firebase share fails
+        LaunchedEffect(state.templateSaved, state.templateShareError) {
+            when {
+                state.templateSaved && state.templateShareError == null -> {
+                    snackbarHostState.showSnackbar("Template saved!")
+                    viewModel.clearTemplateSaved()
+                }
+                state.templateSaved && state.templateShareError != null -> {
+                    snackbarHostState.showSnackbar("Template saved! Community sharing unavailable offline.")
+                    viewModel.clearTemplateSaved()
+                }
+            }
+        }
 
         val scoreboard = state.scoreboard
         if (scoreboard == null) {
@@ -76,7 +93,19 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
             )
         }
 
+        if (showSaveTemplateDialog) {
+            SaveTemplateDialog(
+                defaultName = scoreboard.name.ifEmpty { "My Template" },
+                onSave = { templateName, share ->
+                    viewModel.saveAsTemplate(templateName, share)
+                    showSaveTemplateDialog = false
+                },
+                onDismiss = { showSaveTemplateDialog = false }
+            )
+        }
+
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = {
@@ -126,7 +155,7 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
                                     text = { Text("Share Scores") },
                                     onClick = {
                                         showMenu = false
-                                        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                                        val now = Instant.fromEpochMilliseconds(currentTimeMs()).toLocalDateTime(TimeZone.currentSystemDefault())
                                         val dateStr = "${now.year}-${now.monthNumber.toString().padStart(2,'0')}-${now.dayOfMonth.toString().padStart(2,'0')}"
                                         val sorted = when (scoreboard.scoringMode) {
                                             ScoringMode.HIGHEST_WINS -> scoreboard.participants.sortedByDescending { it.score }
@@ -142,11 +171,16 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
                                             appendLine()
                                             appendLine(lines)
                                             appendLine()
-                                            append("Shared from Scorekeeper App")
+                                            append("Shared from Scorr")
                                         }
                                         shareText(shareContent)
                                     },
                                     leadingIcon = { Icon(Icons.Default.Share, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Save as Template") },
+                                    onClick = { showMenu = false; showSaveTemplateDialog = true },
+                                    leadingIcon = { Icon(Icons.Default.Bookmark, null) }
                                 )
                             }
                         }
@@ -414,4 +448,54 @@ fun ListScoreLayout(
             }
         }
     }
+}
+
+@Composable
+fun SaveTemplateDialog(
+    defaultName: String,
+    onSave: (String, Boolean) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var name by remember { mutableStateOf(defaultName) }
+    var shareWithCommunity by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Save as Template") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Give this setup a name to reuse it later.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Template name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Checkbox(
+                        checked = shareWithCommunity,
+                        onCheckedChange = { shareWithCommunity = it }
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Column {
+                        Text("Share with community", style = MaterialTheme.typography.bodyMedium)
+                        Text("Others can use this template (pending review)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { if (name.isNotBlank()) onSave(name.trim(), shareWithCommunity) }) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
 }

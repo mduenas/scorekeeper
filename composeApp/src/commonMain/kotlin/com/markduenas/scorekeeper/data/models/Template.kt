@@ -10,5 +10,6 @@ data class Template(
     val customIncrements: List<Double> = emptyList(),
     val structureType: StructureType = StructureType.NONE,
     val structureLabel: String = "Round",
-    val winCondition: WinCondition = WinCondition.NONE
+    val winCondition: WinCondition = WinCondition.NONE,
+    val isUserCreated: Boolean = false
 )

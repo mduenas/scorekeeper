@@ -4,6 +4,7 @@ import com.markduenas.scorekeeper.data.models.*
 import com.markduenas.scorekeeper.db.Participant as DbParticipant
 import com.markduenas.scorekeeper.db.Scoreboard as DbScoreboard
 import com.markduenas.scorekeeper.db.ScoreEvent as DbScoreEvent
+import com.markduenas.scorekeeper.db.UserTemplate as DbUserTemplate
 import kotlinx.serialization.json.Json
 
 fun DbScoreboard.toDomain(): Scoreboard = Scoreboard(
@@ -78,6 +79,35 @@ fun DbScoreEvent.toDomain(): ScoreEvent = ScoreEvent(
     structureIndex = structureIndex.toInt(),
     note = note,
     undoneAt = undoneAt
+)
+
+fun DbUserTemplate.toDomain(): Template = Template(
+    id = id,
+    name = name,
+    category = category,
+    defaultParticipantCount = defaultParticipantCount.toInt(),
+    scoringMode = ScoringMode.valueOf(scoringMode.uppercase()),
+    defaultIncrement = defaultIncrement,
+    customIncrements = Json.decodeFromString(customIncrements),
+    structureType = StructureType.valueOf(structureType.uppercase()),
+    structureLabel = structureLabel,
+    winCondition = WinCondition.valueOf(winCondition.uppercase()),
+    isUserCreated = true
+)
+
+fun Template.toDb(createdAt: Long, pendingCommunityShare: Boolean = false): DbUserTemplate = DbUserTemplate(
+    id = id,
+    name = name,
+    category = category,
+    defaultParticipantCount = defaultParticipantCount.toLong(),
+    scoringMode = scoringMode.name.lowercase(),
+    defaultIncrement = defaultIncrement,
+    customIncrements = Json.encodeToString(kotlinx.serialization.builtins.ListSerializer(kotlinx.serialization.serializer<Double>()), customIncrements),
+    structureType = structureType.name.lowercase(),
+    structureLabel = structureLabel,
+    winCondition = winCondition.name.lowercase(),
+    createdAt = createdAt,
+    pendingCommunityShare = if (pendingCommunityShare) 1L else 0L
 )
 
 fun ScoreEvent.toDb(): DbScoreEvent = DbScoreEvent(

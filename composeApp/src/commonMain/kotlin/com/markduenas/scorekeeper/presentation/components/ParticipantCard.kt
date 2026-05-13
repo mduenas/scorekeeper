@@ -139,9 +139,8 @@ fun IncrementButtonsRow(
 }
 
 fun formatScore(score: Double): String {
-    return if (score == score.toLong().toDouble()) {
-        score.toLong().toString()
-    } else {
-        String.format("%.1f", score)
-    }
+    if (score == score.toLong().toDouble()) return score.toLong().toString()
+    val s = score.toString()
+    val dot = s.indexOf('.')
+    return if (dot < 0 || s.length <= dot + 2) s else s.substring(0, dot + 2)
 }

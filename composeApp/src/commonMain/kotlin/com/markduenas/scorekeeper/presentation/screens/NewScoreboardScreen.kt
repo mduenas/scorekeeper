@@ -19,8 +19,10 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import com.markduenas.scorekeeper.data.BuiltInTemplates
 import com.markduenas.scorekeeper.data.models.*
+import com.markduenas.scorekeeper.data.repository.FirestoreRepository
 import com.markduenas.scorekeeper.data.repository.ScorekeeperRepository
-import kotlinx.datetime.Clock
+import kotlinx.coroutines.runBlocking
+import com.markduenas.scorekeeper.currentTimeMs
 import org.koin.compose.koinInject
 import kotlin.random.Random
 
@@ -33,12 +35,23 @@ fun generateId(): String =
     (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789"[Random.nextInt(36)] }.joinToString("")
 
 @OptIn(ExperimentalMaterial3Api::class)
-class NewScoreboardScreen(private val templateId: String? = null) : Screen {
+class NewScoreboardScreen(
+    private val templateId: String? = null,
+    private val isUserTemplate: Boolean = false,
+    private val isCommunityTemplate: Boolean = false
+) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val repository: ScorekeeperRepository = koinInject()
-        val template = templateId?.let { id -> BuiltInTemplates.all.firstOrNull { it.id == id } }
+        val firestoreRepository: FirestoreRepository = koinInject()
+        val template = templateId?.let { id ->
+            when {
+                isUserTemplate -> repository.getUserTemplates().firstOrNull { it.id == id }
+                isCommunityTemplate -> runBlocking { firestoreRepository.getCommunityTemplates().firstOrNull { it.id == id } }
+                else -> BuiltInTemplates.all.firstOrNull { it.id == id }
+            }
+        }
 
         var name by remember { mutableStateOf("") }
         var players by remember {
@@ -126,7 +139,7 @@ class NewScoreboardScreen(private val templateId: String? = null) : Screen {
                     }
                 }
                 item {
-                    val now = Clock.System.now().toEpochMilliseconds()
+                    val now = currentTimeMs()
                     Button(
                         onClick = {
                             val scoreboardId = generateId()

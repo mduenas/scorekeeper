@@ -1,0 +1,32 @@
+CREATE TABLE UserTemplate (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'My Templates',
+    defaultParticipantCount INTEGER NOT NULL DEFAULT 2,
+    scoringMode TEXT NOT NULL DEFAULT 'highest_wins',
+    defaultIncrement REAL NOT NULL DEFAULT 1.0,
+    customIncrements TEXT NOT NULL DEFAULT '[]',
+    structureType TEXT NOT NULL DEFAULT 'none',
+    structureLabel TEXT NOT NULL DEFAULT 'Round',
+    winCondition TEXT NOT NULL DEFAULT 'none',
+    createdAt INTEGER NOT NULL,
+    pendingCommunityShare INTEGER NOT NULL DEFAULT 0
+);
+
+selectAll:
+SELECT * FROM UserTemplate ORDER BY createdAt DESC;
+
+selectById:
+SELECT * FROM UserTemplate WHERE id = ?;
+
+selectPendingCommunityShare:
+SELECT * FROM UserTemplate WHERE pendingCommunityShare = 1;
+
+insert:
+INSERT OR REPLACE INTO UserTemplate VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+delete:
+DELETE FROM UserTemplate WHERE id = ?;
+
+clearPendingCommunityShare:
+UPDATE UserTemplate SET pendingCommunityShare = 0 WHERE id = ?;

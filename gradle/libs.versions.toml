@@ -18,6 +18,9 @@ koin = "3.5.3"
 voyager = "1.1.0-beta03"
 kotlinx-datetime = "0.6.0"
 kotlinx-serialization = "1.6.3"
+firebase-gitlive = "2.1.0"
+firebase-analytics-version = "2.4.0"
+google-services = "4.4.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -50,6 +53,10 @@ voyager-koin = { module = "cafe.adriel.voyager:voyager-koin", version.ref = "voy
 voyager-screenmodel = { module = "cafe.adriel.voyager:voyager-screenmodel", version.ref = "voyager" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+firebase-firestore = { module = "dev.gitlive:firebase-firestore", version.ref = "firebase-gitlive" }
+firebase-auth = { module = "dev.gitlive:firebase-auth", version.ref = "firebase-gitlive" }
+firebase-common = { module = "dev.gitlive:firebase-common", version.ref = "firebase-gitlive" }
+firebase-analytics = { module = "dev.gitlive:firebase-analytics", version.ref = "firebase-analytics-version" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -59,3 +66,4 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+googleServices = { id = "com.google.gms.google-services", version.ref = "google-services" }

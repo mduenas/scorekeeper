@@ -3,11 +3,12 @@ package com.markduenas.scorekeeper.presentation.viewmodel
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.markduenas.scorekeeper.data.models.*
+import com.markduenas.scorekeeper.data.repository.FirestoreRepository
 import com.markduenas.scorekeeper.data.repository.ScorekeeperRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import com.markduenas.scorekeeper.currentTimeMs
 import kotlin.random.Random
 
 data class ScoreboardUiState(
@@ -15,11 +16,14 @@ data class ScoreboardUiState(
     val scoreEvents: List<ScoreEvent> = emptyList(),
     val isLoading: Boolean = false,
     val winner: Participant? = null,
-    val showWinnerDialog: Boolean = false
+    val showWinnerDialog: Boolean = false,
+    val templateSaved: Boolean = false,
+    val templateShareError: String? = null
 )
 
 class ScoreboardViewModel(
     private val repository: ScorekeeperRepository,
+    private val firestoreRepository: FirestoreRepository,
     val scoreboardId: String
 ) : ScreenModel {
 
@@ -57,7 +61,7 @@ class ScoreboardViewModel(
             id = generateId(),
             scoreboardId = scoreboardId,
             participantId = participant.id,
-            timestamp = Clock.System.now().toEpochMilliseconds(),
+            timestamp = currentTimeMs(),
             previousScore = participant.score,
             newScore = newScore,
             delta = newScore - participant.score,
@@ -118,4 +122,38 @@ class ScoreboardViewModel(
 
     private fun generateId(): String =
         (1..16).map { "abcdefghijklmnopqrstuvwxyz0123456789"[Random.nextInt(36)] }.joinToString("")
+
+    fun saveAsTemplate(templateName: String, shareWithCommunity: Boolean = false) {
+        val scoreboard = _uiState.value.scoreboard ?: return
+        screenModelScope.launch {
+            val template = Template(
+                id = generateId(),
+                name = templateName,
+                category = "My Templates",
+                defaultParticipantCount = scoreboard.participants.size.coerceAtLeast(2),
+                scoringMode = scoreboard.scoringMode,
+                defaultIncrement = scoreboard.defaultIncrement,
+                customIncrements = scoreboard.customIncrements,
+                structureType = scoreboard.structureType,
+                structureLabel = scoreboard.structureLabel,
+                winCondition = scoreboard.winCondition,
+                isUserCreated = true
+            )
+            // Save locally — mark as pending community share if requested
+            repository.saveUserTemplate(template, pendingCommunityShare = shareWithCommunity)
+            _uiState.value = _uiState.value.copy(templateSaved = true, templateShareError = null)
+            if (shareWithCommunity) {
+                val result = firestoreRepository.shareCommunityTemplate(template)
+                if (result.isSuccess) {
+                    // Uploaded successfully — clear the pending flag
+                    repository.clearPendingCommunityShare(template.id)
+                }
+                // On failure it stays marked as pending and will be retried on next auth
+            }
+        }
+    }
+
+    fun clearTemplateSaved() {
+        _uiState.value = _uiState.value.copy(templateSaved = false, templateShareError = null)
+    }
 }

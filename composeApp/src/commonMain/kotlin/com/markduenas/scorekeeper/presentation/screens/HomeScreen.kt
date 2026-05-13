@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
@@ -20,6 +21,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.getScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffect
 import com.markduenas.scorekeeper.data.models.Scoreboard
 import com.markduenas.scorekeeper.data.models.Template
 import com.markduenas.scorekeeper.presentation.viewmodel.HomeViewModel
@@ -34,11 +36,22 @@ class HomeScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         val viewModel: HomeViewModel = getScreenModel()
         val state by viewModel.uiState.collectAsState()
+        val userTemplates by viewModel.userTemplates.collectAsState()
+        val communityTemplates by viewModel.communityTemplates.collectAsState()
+
+        // Reload user templates and scoreboards every time this screen becomes active
+        // (e.g. returning from ScoreboardScreen after saving a template)
+        LifecycleEffect(
+            onStarted = {
+                viewModel.loadUserTemplates()
+                viewModel.loadScoreboards()
+            }
+        )
 
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Scorekeeper", fontWeight = FontWeight.Bold) },
+                    title = { Text("Scorr", fontWeight = FontWeight.Bold) },
                     actions = {
                         IconButton(onClick = { navigator.push(MoreAppsScreen()) }) {
                             Icon(Icons.Default.Info, contentDescription = "More Apps")
@@ -64,9 +77,45 @@ class HomeScreen : Screen {
                     Text("Quick Start", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(8.dp))
                     TemplatesSection(
-                        categories = viewModel.templateCategories,
+                        categories = viewModel.builtInCategories,
                         onSelect = { template -> navigator.push(NewScoreboardScreen(template.id)) }
                     )
+                    if (userTemplates.isNotEmpty()) {
+                        Spacer(Modifier.height(12.dp))
+                        Text("My Templates", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(4.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(userTemplates) { template ->
+                                InputChip(
+                                    selected = false,
+                                    onClick = { navigator.push(NewScoreboardScreen(template.id, isUserTemplate = true)) },
+                                    label = { Text(template.name) },
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = { viewModel.deleteUserTemplate(template.id) },
+                                            modifier = Modifier.size(18.dp)
+                                        ) {
+                                            Icon(Icons.Default.Close, contentDescription = "Delete template",
+                                                modifier = Modifier.size(14.dp))
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    if (communityTemplates.isNotEmpty()) {
+                        Spacer(Modifier.height(12.dp))
+                        Text("Community Templates", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(4.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(communityTemplates) { template ->
+                                SuggestionChip(
+                                    onClick = { navigator.push(NewScoreboardScreen(template.id, isCommunityTemplate = true)) },
+                                    label = { Text(template.name) }
+                                )
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(16.dp))
                 }
                 if (state.recentScoreboards.isNotEmpty()) {
@@ -168,9 +217,12 @@ fun EmptyState() {
     }
 }
 
-fun formatScoreCompact(score: Double): String =
-    if (score == score.toLong().toDouble()) score.toLong().toString()
-    else "%.1f".format(score)
+fun formatScoreCompact(score: Double): String {
+    if (score == score.toLong().toDouble()) return score.toLong().toString()
+    val s = score.toString()
+    val dot = s.indexOf('.')
+    return if (dot < 0 || s.length <= dot + 2) s else s.substring(0, dot + 2)
+}
 
 fun formatTimestamp(epochMs: Long): String {
     return try {
