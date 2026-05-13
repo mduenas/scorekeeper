@@ -6,7 +6,7 @@ CODE_ROOT="$(cd "$REPO_ROOT/.." && pwd)"
 SKIP_UPLOAD=false
 BUMP_VERSION=true
 BUNDLE_ID="com.markduenas.scorekeeper"
-PROJECT="$REPO_ROOT/iosApp/iosApp.xcodeproj"
+WORKSPACE="$REPO_ROOT/iosApp/iosApp.xcworkspace"
 SCHEME="iosApp"
 CONFIGURATION="Release"
 EXPORT_OPTIONS_PLIST="$REPO_ROOT/scripts/ExportOptions.plist"
@@ -102,7 +102,7 @@ mkdir -p "$ARCHIVE_DIR"
 
 echo "Archiving $SCHEME..."
 xcodebuild archive \
-  -project "$PROJECT" \
+  -workspace "$WORKSPACE" \
   -scheme "$SCHEME" \
   -configuration "$CONFIGURATION" \
   -archivePath "$ARCHIVE_PATH" \
