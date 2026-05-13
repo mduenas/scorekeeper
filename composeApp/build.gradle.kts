@@ -2,10 +2,18 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 
-val keystoreProperties = Properties().also { props ->
-    val propsFile = rootProject.file("keystore.properties")
-    if (propsFile.exists()) props.load(propsFile.inputStream())
-}
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) keystoreProperties.load(keystorePropertiesFile.inputStream())
+
+val versionPropertiesFile = rootProject.file("version.properties")
+val versionProperties = Properties()
+if (versionPropertiesFile.exists()) versionProperties.load(versionPropertiesFile.inputStream())
+
+val ciVersionCode = project.findProperty("versionCode")?.toString()?.toIntOrNull()
+val ciVersionName = project.findProperty("versionName")?.toString()
+val appVersionCode = ciVersionCode ?: versionProperties.getProperty("versionCode", "1").toInt()
+val appVersionName = ciVersionName ?: versionProperties.getProperty("versionName", "1.0")
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -84,8 +92,8 @@ android {
         applicationId = "com.markduenas.scorekeeper"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
     }
     packaging {
         resources {
@@ -93,17 +101,21 @@ android {
         }
     }
     signingConfigs {
-        create("release") {
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
         }
     }
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
