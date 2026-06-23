@@ -1,6 +1,8 @@
 *.iml
 .kotlin
 .gradle
+.claude/settings.local.json
+.mcp.json
 **/build/
 xcuserdata
 !src/**/build/
