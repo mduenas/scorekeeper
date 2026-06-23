@@ -80,10 +80,21 @@ class HomeScreen : Screen {
                         categories = viewModel.builtInCategories,
                         onSelect = { template -> navigator.push(NewScoreboardScreen(template.id)) }
                     )
-                    if (userTemplates.isNotEmpty()) {
-                        Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text("My Templates", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.height(4.dp))
+                        TextButton(onClick = { navigator.push(NewTemplateScreen()) }) {
+                            Icon(Icons.Default.Add, contentDescription = "Create Custom Template", modifier = Modifier.size(16.dp))
+                            Spacer(Modifier.width(4.dp))
+                            Text("Create")
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    if (userTemplates.isNotEmpty()) {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(userTemplates) { template ->
                                 InputChip(
@@ -102,6 +113,13 @@ class HomeScreen : Screen {
                                 )
                             }
                         }
+                    } else {
+                        Text(
+                            text = "No custom templates yet. Tap Create to add one.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
                     }
                     if (communityTemplates.isNotEmpty()) {
                         Spacer(Modifier.height(12.dp))
