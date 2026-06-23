@@ -79,6 +79,9 @@ class ScorekeeperRepository(driverFactory: DatabaseDriverFactory) {
     fun renameParticipant(id: String, name: String) =
         db.participantQueries.updateName(name, id)
 
+    fun renameScoreboard(id: String, name: String) =
+        db.scoreboardQueries.updateName(name, currentTimeMs(), id)
+
     fun advanceStructure(scoreboardId: String, newIndex: Int) =
         db.scoreboardQueries.updateStructureIndex(
             newIndex.toLong(),

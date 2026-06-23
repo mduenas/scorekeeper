@@ -48,6 +48,7 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
         var showMenu by remember { mutableStateOf(false) }
         var customScoreTarget by remember { mutableStateOf<Participant?>(null) }
         var showSaveTemplateDialog by remember { mutableStateOf(false) }
+        var showRenameDialog by remember { mutableStateOf(false) }
         val snackbarHostState = remember { SnackbarHostState() }
 
         // Show feedback when template is saved or Firebase share fails
@@ -101,6 +102,17 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
                     showSaveTemplateDialog = false
                 },
                 onDismiss = { showSaveTemplateDialog = false }
+            )
+        }
+
+        if (showRenameDialog) {
+            RenameScoreboardDialog(
+                currentName = scoreboard.name,
+                onRename = { newName ->
+                    viewModel.renameScoreboard(newName)
+                    showRenameDialog = false
+                },
+                onDismiss = { showRenameDialog = false }
             )
         }
 
@@ -181,6 +193,11 @@ class ScoreboardScreen(private val scoreboardId: String) : Screen {
                                     text = { Text("Save as Template") },
                                     onClick = { showMenu = false; showSaveTemplateDialog = true },
                                     leadingIcon = { Icon(Icons.Default.Bookmark, null) }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Rename Scoreboard") },
+                                    onClick = { showMenu = false; showRenameDialog = true },
+                                    leadingIcon = { Icon(Icons.Default.Edit, null) }
                                 )
                             }
                         }
@@ -493,6 +510,34 @@ fun SaveTemplateDialog(
         },
         confirmButton = {
             Button(onClick = { if (name.isNotBlank()) onSave(name.trim(), shareWithCommunity) }) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+fun RenameScoreboardDialog(
+    currentName: String,
+    onRename: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var name by remember { mutableStateOf(currentName) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Rename Scoreboard") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Scoreboard name") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(onClick = { onRename(name.trim()) }) { Text("Save") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }

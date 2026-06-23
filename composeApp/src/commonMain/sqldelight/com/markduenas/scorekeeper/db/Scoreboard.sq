@@ -42,5 +42,8 @@ UPDATE Scoreboard SET currentStructureIndex=?, updatedAt=? WHERE id=?;
 updateStatus:
 UPDATE Scoreboard SET status=?, updatedAt=? WHERE id=?;
 
+updateName:
+UPDATE Scoreboard SET name=?, updatedAt=? WHERE id=?;
+
 delete:
 DELETE FROM Scoreboard WHERE id=?;

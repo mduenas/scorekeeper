@@ -104,6 +104,13 @@ class ScoreboardViewModel(
         }
     }
 
+    fun renameScoreboard(name: String) {
+        screenModelScope.launch {
+            repository.renameScoreboard(scoreboardId, name)
+            load()
+        }
+    }
+
     fun dismissWinnerDialog() {
         _uiState.value.winner?.id?.let { dismissedWinnerIds.add(it) }
         _uiState.value = _uiState.value.copy(showWinnerDialog = false)
