@@ -80,18 +80,18 @@ XCODEPROJ="$REPO_ROOT/iosApp/iosApp.xcodeproj/project.pbxproj"
 XCCONFIG="$REPO_ROOT/iosApp/Configuration/Config.xcconfig"
 
 if [[ "$BUMP_VERSION" == "true" ]]; then
-  CURRENT_BUILD="$(grep -m1 'CURRENT_PROJECT_VERSION' "$XCODEPROJ" | sed -E 's/.*CURRENT_PROJECT_VERSION = ([0-9]+);.*/\1/')"
+  CURRENT_BUILD="$(grep -m1 'CURRENT_PROJECT_VERSION' "$XCCONFIG" | sed -E 's/CURRENT_PROJECT_VERSION=([0-9]+)/\1/')"
   if [[ -z "$CURRENT_BUILD" ]]; then
-    echo "Could not read CURRENT_PROJECT_VERSION from project.pbxproj" >&2
+    echo "Could not read CURRENT_PROJECT_VERSION from Config.xcconfig" >&2
     exit 1
   fi
   NEXT_BUILD=$((CURRENT_BUILD + 1))
-  sed -i.bak -E "s/CURRENT_PROJECT_VERSION = ${CURRENT_BUILD};/CURRENT_PROJECT_VERSION = ${NEXT_BUILD};/g" "$XCODEPROJ"
-  rm -f "${XCODEPROJ}.bak"
+  sed -i.bak -E "s/CURRENT_PROJECT_VERSION=${CURRENT_BUILD}/CURRENT_PROJECT_VERSION=${NEXT_BUILD}/" "$XCCONFIG"
+  rm -f "${XCCONFIG}.bak"
   echo "Bumped CURRENT_PROJECT_VERSION: $CURRENT_BUILD -> $NEXT_BUILD"
 fi
 
-BUILD_NUMBER="$(grep -m1 'CURRENT_PROJECT_VERSION' "$XCODEPROJ" | sed -E 's/.*CURRENT_PROJECT_VERSION = ([0-9]+);.*/\1/')"
+BUILD_NUMBER="$(grep -m1 'CURRENT_PROJECT_VERSION' "$XCCONFIG" | sed -E 's/CURRENT_PROJECT_VERSION=([0-9]+)/\1/')"
 MARKETING_VERSION="$(grep 'MARKETING_VERSION' "$XCCONFIG" | sed -E 's/MARKETING_VERSION=(.+)/\1/' | tr -d ' ')"
 echo "Building iOS $MARKETING_VERSION ($BUILD_NUMBER)"
 

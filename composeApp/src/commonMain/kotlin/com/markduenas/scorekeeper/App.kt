@@ -2,10 +2,6 @@ package com.markduenas.scorekeeper
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import cafe.adriel.voyager.navigator.Navigator
 import com.markduenas.scorekeeper.data.repository.FirestoreRepository
 import com.markduenas.scorekeeper.presentation.screens.HomeScreen
@@ -14,20 +10,24 @@ import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
 
 @Composable
-fun App() {
-    KoinContext {
-        ScorekeeperTheme {
-            val firestoreRepo: FirestoreRepository = koinInject()
+fun App(screenshotName: String? = null) {
+    ScorekeeperTheme {
+        if (screenshotName != null) {
+            StoreScreenshotScreen(screenshotName)
+        } else {
+            KoinContext {
+                val firestoreRepo: FirestoreRepository = koinInject()
 
-            LaunchedEffect(Unit) {
-                try {
-                    firestoreRepo.ensureSignedIn()
-                } catch (e: Exception) {
-                    // No network — proceed anyway
+                LaunchedEffect(Unit) {
+                    try {
+                        firestoreRepo.ensureSignedIn()
+                    } catch (e: Exception) {
+                        // No network - proceed anyway
+                    }
                 }
-            }
 
-            Navigator(HomeScreen())
+                Navigator(HomeScreen())
+            }
         }
     }
 }

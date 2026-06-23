@@ -41,34 +41,54 @@ class HomeViewModel(
     fun loadScoreboards() {
         screenModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            val scoreboards = repository.getAllScoreboards()
-            _uiState.value = HomeUiState(recentScoreboards = scoreboards, isLoading = false)
+            try {
+                val scoreboards = repository.getAllScoreboards()
+                _uiState.value = HomeUiState(recentScoreboards = scoreboards, isLoading = false)
+            } catch (e: Exception) {
+                _uiState.value = HomeUiState(isLoading = false)
+            }
         }
     }
 
     fun loadUserTemplates() {
         screenModelScope.launch {
-            _userTemplates.value = repository.getUserTemplates()
+            try {
+                _userTemplates.value = repository.getUserTemplates()
+            } catch (e: Exception) {
+                // Leave empty on error
+            }
         }
     }
 
     fun loadCommunityTemplates() {
         screenModelScope.launch {
-            _communityTemplates.value = firestoreRepository.getCommunityTemplates()
+            try {
+                _communityTemplates.value = firestoreRepository.getCommunityTemplates()
+            } catch (e: Exception) {
+                // Offline or auth failure — leave empty
+            }
         }
     }
 
     fun deleteScoreboard(id: String) {
         screenModelScope.launch {
-            repository.deleteScoreboard(id)
-            loadScoreboards()
+            try {
+                repository.deleteScoreboard(id)
+                loadScoreboards()
+            } catch (e: Exception) {
+                loadScoreboards()
+            }
         }
     }
 
     fun deleteUserTemplate(id: String) {
         screenModelScope.launch {
-            repository.deleteUserTemplate(id)
-            loadUserTemplates()
+            try {
+                repository.deleteUserTemplate(id)
+                loadUserTemplates()
+            } catch (e: Exception) {
+                loadUserTemplates()
+            }
         }
     }
 }

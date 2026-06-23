@@ -19,19 +19,23 @@ import org.koin.core.context.startKoin
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        initShareHelper(this)
-        appContext = this
-        Firebase.initialize(this)
-        if (FirstLaunchTracker.isFirstLaunch()) {
-            AnalyticsService().logFirstOpen()
-            FirstLaunchTracker.markLaunched()
-        }
-        startKoin {
-            androidContext(this@MainActivity)
-            modules(androidModule, appModule)
+
+        val screenshotName = intent.getStringExtra("screenshotName")
+        if (screenshotName == null) {
+            initShareHelper(this)
+            appContext = this
+            Firebase.initialize(this)
+            if (FirstLaunchTracker.isFirstLaunch()) {
+                AnalyticsService().logFirstOpen()
+                FirstLaunchTracker.markLaunched()
+            }
+            startKoin {
+                androidContext(this@MainActivity)
+                modules(androidModule, appModule)
+            }
         }
         setContent {
-            App()
+            App(screenshotName = screenshotName)
         }
     }
 }
