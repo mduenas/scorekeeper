@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /community_templates/{templateId} {
+
+      // Any signed-in user (anonymous) can read templates
+      allow read: if request.auth != null;
+
+      // Any signed-in user can submit a new template,
+      // but isApproved must be false — only you approve via console
+      allow create: if request.auth != null
+        && request.resource.data.isApproved == false
+        && request.resource.data.keys().hasAll([
+             'name', 'category', 'defaultParticipantCount',
+             'scoringMode', 'isApproved', 'createdAt'
+           ]);
+
+      // No client can update or delete
+      allow update, delete: if false;
+    }
+  }
+}
