@@ -7,7 +7,7 @@ Scorr
 Scorekeeper for games & sports
 
 ## Promotional Text
-Create scoreboards for games, sports, trivia, counters, and custom scoring. Start from templates, track history, undo mistakes, and share results.
+Create scoreboards for games and sports. Start from templates, customize scoring buttons, track history, undo mistakes, and easily rename scoreboards on the fly!
 
 ## Description
 Scorr is a fast, flexible scorekeeper for game night, pickup sports, classroom activities, trivia, tournaments, and custom scoring.
@@ -38,7 +38,9 @@ Open Scorr, pick a template, add players, and start scoring.
 scorekeeper,scoreboard,scores,games,sports,trivia,board games,card games,teams,counter
 
 ## What's New
-Initial release of Scorr with flexible scoreboards, built-in templates, custom scoring, score history, undo, sharing, and reusable templates.
+- Custom Scoring Templates: Create and save your own template from scratch. Customize default player count, win condition, and configure 1-10 custom quick-scoring buttons.
+- Rename Scoreboards: Easily rename any scoreboard at any time directly from the top bar options menu.
+- General improvements and minor bug fixes.
 
 ## Suggested Category
 Primary: Utilities
