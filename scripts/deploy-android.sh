@@ -8,6 +8,8 @@ SKIP_UPLOAD=false
 BUMP_VERSION=true
 SERVICE_ACCOUNT_JSON="${SERVICE_ACCOUNT_JSON:-}"
 PACKAGE_NAME="${ANDROID_PACKAGE_NAME:-com.markduenas.scorekeeper}"
+RELEASE_NOTES="${RELEASE_NOTES:-}"
+RELEASE_NOTES_FILE="${RELEASE_NOTES_FILE:-}"
 
 SHARED_ENV_FILE="$CODE_ROOT/.deploy-config/deploy.env"
 if [[ -f "$SHARED_ENV_FILE" ]]; then
@@ -26,6 +28,8 @@ Options:
   --no-bump-version                           Do not increment versionCode in version.properties
   --service-account <path>                    Google Play JSON key path
   --package-name <id>                         Android application ID
+  --release-notes <text>                      "What's new" text for en-US (Play Store changelog)
+  --release-notes-file <path>                 Read "What's new" text from a file instead of --release-notes
   -h, --help                                  Show help
 
 Environment:
@@ -35,6 +39,8 @@ Environment:
   ANDROID_KEYSTORE_PASSWORD
   ANDROID_KEY_ALIAS
   ANDROID_KEY_PASSWORD
+  RELEASE_NOTES               Same as --release-notes
+  RELEASE_NOTES_FILE          Same as --release-notes-file
 EOF
 }
 
@@ -58,6 +64,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --package-name)
       PACKAGE_NAME="$2"
+      shift 2
+      ;;
+    --release-notes)
+      RELEASE_NOTES="$2"
+      shift 2
+      ;;
+    --release-notes-file)
+      RELEASE_NOTES_FILE="$2"
       shift 2
       ;;
     -h|--help)
@@ -159,6 +173,29 @@ if ! command -v fastlane >/dev/null 2>&1; then
   exit 1
 fi
 
+RELEASE_NOTES_TEXT=""
+if [[ -n "$RELEASE_NOTES_FILE" ]]; then
+  if [[ ! -f "$RELEASE_NOTES_FILE" ]]; then
+    echo "Release notes file not found: $RELEASE_NOTES_FILE" >&2
+    popd >/dev/null
+    exit 1
+  fi
+  RELEASE_NOTES_TEXT="$(cat "$RELEASE_NOTES_FILE")"
+elif [[ -n "$RELEASE_NOTES" ]]; then
+  RELEASE_NOTES_TEXT="$RELEASE_NOTES"
+fi
+
+SKIP_CHANGELOGS=true
+if [[ -n "$RELEASE_NOTES_TEXT" ]]; then
+  CHANGELOG_DIR="$REPO_ROOT/fastlane/metadata/android/en-US/changelogs"
+  mkdir -p "$CHANGELOG_DIR"
+  printf '%s' "$RELEASE_NOTES_TEXT" > "$CHANGELOG_DIR/${VERSION_CODE}.txt"
+  echo "Wrote Play Store changelog: $CHANGELOG_DIR/${VERSION_CODE}.txt"
+  SKIP_CHANGELOGS=false
+else
+  echo "No release notes provided (--release-notes / --release-notes-file / RELEASE_NOTES). Skipping changelog upload."
+fi
+
 echo "Uploading to Google Play track: $TRACK"
 fastlane supply \
   --aab "$AAB_PATH" \
@@ -170,7 +207,7 @@ fastlane supply \
   --skip_upload_images true \
   --skip_upload_screenshots true \
   --skip_upload_metadata true \
-  --skip_upload_changelogs true
+  --skip_upload_changelogs "$SKIP_CHANGELOGS"
 
 popd >/dev/null
 
