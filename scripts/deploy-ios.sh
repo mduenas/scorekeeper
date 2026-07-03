@@ -107,9 +107,8 @@ xcodebuild archive \
   -configuration "$CONFIGURATION" \
   -archivePath "$ARCHIVE_PATH" \
   -destination "generic/platform=iOS" \
-  CODE_SIGN_STYLE=Automatic \
   DEVELOPMENT_TEAM="$TEAM_ID" \
-  | grep -E "^(error:|warning: .*(error|cannot)|Build succeeded|** ARCHIVE|Archive Succeeded)" || true
+  | grep -E "^(error:|warning: .*(error|cannot)|Build succeeded|\*\* ARCHIVE|Archive Succeeded)" || true
 
 if [[ ! -d "$ARCHIVE_PATH" ]]; then
   echo "Archive not found at $ARCHIVE_PATH" >&2
@@ -131,7 +130,7 @@ xcodebuild -exportArchive \
   -authenticationKeyPath "$ASC_API_KEY_PATH" \
   -authenticationKeyID "$ASC_API_KEY_ID" \
   -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
-  | grep -E "^(error:|Export succeeded|** EXPORT)" || true
+  | grep -E "^(error:|Export succeeded|\*\* EXPORT)" || true
 
 IPA_PATH="$(find "$EXPORT_DIR" -name '*.ipa' | sort | tail -1)"
 if [[ -z "$IPA_PATH" ]]; then
@@ -155,14 +154,21 @@ if [[ -z "${ASC_API_KEY_ID:-}" || -z "${ASC_ISSUER_ID:-}" ]]; then
 fi
 
 echo "Uploading to App Store Connect (TestFlight)..."
-xcrun altool \
+ALTOOL_OUTPUT="$(xcrun altool \
   --upload-app \
   --type ios \
   --file "$IPA_PATH" \
   --apiKey "$ASC_API_KEY_ID" \
   --apiIssuer "$ASC_ISSUER_ID" \
   --show-progress \
-  --output-format normal
+  --output-format normal 2>&1)"
+ALTOOL_STATUS=$?
+echo "$ALTOOL_OUTPUT"
+
+if [[ $ALTOOL_STATUS -ne 0 ]] || echo "$ALTOOL_OUTPUT" | grep -q "UPLOAD FAILED\|Upload failed\|Validation failed"; then
+  echo "iOS upload to TestFlight failed." >&2
+  exit 1
+fi
 
 echo "iOS deployment complete. Build $BUILD_NUMBER uploaded to TestFlight."
 
