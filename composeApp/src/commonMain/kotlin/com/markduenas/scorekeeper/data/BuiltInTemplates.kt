@@ -56,14 +56,64 @@ object BuiltInTemplates {
             defaultParticipantCount = 6,
             structureType = StructureType.HANDS, structureLabel = "Hand",
             customIncrements = listOf(1.0, 5.0, 10.0, 25.0),
-            scoringMode = ScoringMode.HIGHEST_WINS
+            scoringMode = ScoringMode.HIGHEST_WINS,
+            winCondition = WinCondition.HIGHEST_SCORE
         ),
         Template(
             "uno", "UNO", "Games",
             defaultParticipantCount = 4,
             structureType = StructureType.ROUNDS, structureLabel = "Round",
             customIncrements = listOf(1.0, 10.0, 20.0, 50.0),
+            scoringMode = ScoringMode.LOWEST_WINS,
             winCondition = WinCondition.LOWEST_SCORE
+        ),
+        Template(
+            "rummy", "Rummy", "Games",
+            defaultParticipantCount = 4,
+            structureType = StructureType.HANDS, structureLabel = "Hand",
+            customIncrements = listOf(1.0, 5.0, 10.0, 25.0),
+            scoringMode = ScoringMode.LOWEST_WINS,
+            winCondition = WinCondition.LOWEST_SCORE
+        ),
+        Template(
+            "hearts", "Hearts", "Games",
+            defaultParticipantCount = 4,
+            structureType = StructureType.ROUNDS, structureLabel = "Round",
+            customIncrements = listOf(1.0, 5.0, 13.0, 26.0),
+            scoringMode = ScoringMode.LOWEST_WINS,
+            winCondition = WinCondition.LOWEST_SCORE
+        ),
+        Template(
+            "spades", "Spades", "Games",
+            defaultParticipantCount = 4,
+            structureType = StructureType.ROUNDS, structureLabel = "Round",
+            customIncrements = listOf(1.0, 5.0, 10.0, 13.0, 50.0),
+            scoringMode = ScoringMode.HIGHEST_WINS,
+            winCondition = WinCondition.FIRST_TO_TARGET
+        ),
+        Template(
+            "euchre", "Euchre", "Games",
+            defaultParticipantCount = 4,
+            structureType = StructureType.HANDS, structureLabel = "Hand",
+            customIncrements = listOf(1.0, 2.0, 4.0),
+            scoringMode = ScoringMode.HIGHEST_WINS,
+            winCondition = WinCondition.HIGHEST_SCORE
+        ),
+        Template(
+            "dominoes", "Dominoes", "Games",
+            defaultParticipantCount = 4,
+            structureType = StructureType.ROUNDS, structureLabel = "Round",
+            customIncrements = listOf(1.0, 5.0, 10.0, 15.0, 25.0),
+            scoringMode = ScoringMode.HIGHEST_WINS,
+            winCondition = WinCondition.FIRST_TO_TARGET
+        ),
+        Template(
+            "scrabble", "Scrabble", "Games",
+            defaultParticipantCount = 4,
+            structureType = StructureType.TURNS, structureLabel = "Turn",
+            customIncrements = listOf(1.0, 2.0, 3.0, 5.0, 7.0, 10.0, 15.0, 20.0, 50.0),
+            scoringMode = ScoringMode.HIGHEST_WINS,
+            winCondition = WinCondition.HIGHEST_SCORE
         ),
 
         // Sports
@@ -106,13 +156,14 @@ object BuiltInTemplates {
             "tennis", "Tennis", "Sports",
             defaultParticipantCount = 2,
             structureType = StructureType.SETS, structureLabel = "Set",
-            customIncrements = listOf(1.0)
+            customIncrements = listOf(1.0),
+            winCondition = WinCondition.HIGHEST_SCORE
         ),
         Template(
             "baseball", "Baseball", "Sports",
             defaultParticipantCount = 2,
             structureType = StructureType.INNINGS, structureLabel = "Inning",
-            customIncrements = listOf(1.0, 2.0, 3.0),
+            customIncrements = listOf(1.0, 2.0, 3.0, 4.0),
             winCondition = WinCondition.HIGHEST_SCORE
         ),
         Template(
@@ -120,7 +171,8 @@ object BuiltInTemplates {
             defaultParticipantCount = 4,
             scoringMode = ScoringMode.LOWEST_WINS,
             structureType = StructureType.HOLES, structureLabel = "Hole",
-            customIncrements = listOf(1.0)
+            customIncrements = listOf(1.0, 2.0, 3.0),
+            winCondition = WinCondition.LOWEST_SCORE
         ),
         Template(
             "bowling", "Bowling", "Sports",
@@ -139,6 +191,20 @@ object BuiltInTemplates {
             "cornhole", "Cornhole", "Sports",
             defaultParticipantCount = 2,
             customIncrements = listOf(1.0, 3.0),
+            winCondition = WinCondition.FIRST_TO_TARGET
+        ),
+        Template(
+            "table_tennis", "Table Tennis", "Sports",
+            defaultParticipantCount = 2,
+            structureType = StructureType.SETS, structureLabel = "Game",
+            customIncrements = listOf(1.0),
+            winCondition = WinCondition.FIRST_TO_TARGET
+        ),
+        Template(
+            "horseshoes", "Horseshoes", "Sports",
+            defaultParticipantCount = 2,
+            structureType = StructureType.ROUNDS, structureLabel = "Round",
+            customIncrements = listOf(1.0, 2.0, 3.0),
             winCondition = WinCondition.FIRST_TO_TARGET
         )
     )
