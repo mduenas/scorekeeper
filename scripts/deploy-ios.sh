@@ -21,6 +21,8 @@ fi
 ASC_API_KEY_PATH="${APP_STORE_CONNECT_API_KEY_PATH:-${ASC_KEY_PATH:-}}"
 ASC_API_KEY_ID="${APP_STORE_CONNECT_API_KEY_ID:-${ASC_KEY_ID:-}}"
 ASC_ISSUER_ID="${APP_STORE_CONNECT_API_ISSUER_ID:-${ASC_ISSUER_ID:-}}"
+RELEASE_NOTES="${RELEASE_NOTES:-}"
+RELEASE_NOTES_FILE="${RELEASE_NOTES_FILE:-}"
 
 usage() {
   cat <<'EOF'
@@ -33,12 +35,16 @@ Options:
   --asc-key-path <path>        App Store Connect API key (.p8 file)
   --asc-key-id <id>            App Store Connect API key ID
   --asc-issuer <id>            App Store Connect Issuer ID
+  --release-notes <text>       TestFlight "What to Test" text for this build
+  --release-notes-file <path>  Read "What to Test" text from a file instead of --release-notes
   -h, --help                   Show help
 
 Environment (loaded from .deploy-config/deploy.env):
   APP_STORE_CONNECT_API_KEY_PATH
   APP_STORE_CONNECT_API_KEY_ID
   APP_STORE_CONNECT_API_ISSUER_ID
+  RELEASE_NOTES                Same as --release-notes
+  RELEASE_NOTES_FILE           Same as --release-notes-file
 EOF
 }
 
@@ -62,6 +68,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --asc-issuer)
       ASC_ISSUER_ID="$2"
+      shift 2
+      ;;
+    --release-notes)
+      RELEASE_NOTES="$2"
+      shift 2
+      ;;
+    --release-notes-file)
+      RELEASE_NOTES_FILE="$2"
       shift 2
       ;;
     -h|--help)
@@ -139,33 +153,53 @@ if [[ -z "$IPA_PATH" ]]; then
 fi
 echo "Exported IPA: $IPA_PATH"
 
-if [[ -n "$ASC_API_KEY_PATH" && -f "$ASC_API_KEY_PATH" ]]; then
-  ALTOOL_KEY_DIR=~/.appstoreconnect/private_keys
-  mkdir -p "$ALTOOL_KEY_DIR"
-  KEY_FILENAME="$(basename "$ASC_API_KEY_PATH")"
-  if [[ ! -f "$ALTOOL_KEY_DIR/$KEY_FILENAME" ]]; then
-    cp "$ASC_API_KEY_PATH" "$ALTOOL_KEY_DIR/$KEY_FILENAME"
-  fi
-fi
-
 if [[ -z "${ASC_API_KEY_ID:-}" || -z "${ASC_ISSUER_ID:-}" ]]; then
   echo "ASC_API_KEY_ID or ASC_ISSUER_ID not set. Set them in .deploy-config/deploy.env or pass --asc-key-id / --asc-issuer." >&2
   exit 1
 fi
 
-echo "Uploading to App Store Connect (TestFlight)..."
-ALTOOL_OUTPUT="$(xcrun altool \
-  --upload-app \
-  --type ios \
-  --file "$IPA_PATH" \
-  --apiKey "$ASC_API_KEY_ID" \
-  --apiIssuer "$ASC_ISSUER_ID" \
-  --show-progress \
-  --output-format normal 2>&1)"
-ALTOOL_STATUS=$?
-echo "$ALTOOL_OUTPUT"
+RELEASE_NOTES_TEXT=""
+if [[ -n "$RELEASE_NOTES_FILE" ]]; then
+  if [[ ! -f "$RELEASE_NOTES_FILE" ]]; then
+    echo "Release notes file not found: $RELEASE_NOTES_FILE" >&2
+    exit 1
+  fi
+  RELEASE_NOTES_TEXT="$(cat "$RELEASE_NOTES_FILE")"
+elif [[ -n "$RELEASE_NOTES" ]]; then
+  RELEASE_NOTES_TEXT="$RELEASE_NOTES"
+fi
 
-if [[ $ALTOOL_STATUS -ne 0 ]] || echo "$ALTOOL_OUTPUT" | grep -q "UPLOAD FAILED\|Upload failed\|Validation failed"; then
+if ! command -v fastlane >/dev/null 2>&1; then
+  echo "fastlane is required for TestFlight upload with release notes. Install with: gem install fastlane" >&2
+  exit 1
+fi
+
+echo "Uploading to App Store Connect (TestFlight) via fastlane pilot..."
+PILOT_API_KEY_JSON=$(cat <<EOF_KEY
+{"key_id":"${ASC_API_KEY_ID}","issuer_id":"${ASC_ISSUER_ID}","filepath":"${ASC_API_KEY_PATH}","in_house":false}
+EOF_KEY
+)
+PILOT_ARGS=(
+  fastlane pilot upload
+  --ipa "$IPA_PATH"
+  --api_key "$PILOT_API_KEY_JSON"
+  --skip_waiting_for_build_processing false
+  --skip_submission true
+)
+
+if [[ -n "$RELEASE_NOTES_TEXT" ]]; then
+  PILOT_ARGS+=(--changelog "$RELEASE_NOTES_TEXT")
+  echo "Setting TestFlight 'What to Test' notes for this build."
+else
+  echo "No release notes provided (--release-notes / --release-notes-file / RELEASE_NOTES). Uploading without changelog."
+fi
+
+set +e
+"${PILOT_ARGS[@]}"
+PILOT_STATUS=$?
+set -e
+
+if [[ $PILOT_STATUS -ne 0 ]]; then
   echo "iOS upload to TestFlight failed." >&2
   exit 1
 fi
