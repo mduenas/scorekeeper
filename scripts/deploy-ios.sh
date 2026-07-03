@@ -175,8 +175,9 @@ if ! command -v fastlane >/dev/null 2>&1; then
 fi
 
 echo "Uploading to App Store Connect (TestFlight) via fastlane pilot..."
+KEY_CONTENT_B64="$(base64 -i "$ASC_API_KEY_PATH" | tr -d '\n')"
 PILOT_API_KEY_JSON=$(cat <<EOF_KEY
-{"key_id":"${ASC_API_KEY_ID}","issuer_id":"${ASC_ISSUER_ID}","filepath":"${ASC_API_KEY_PATH}","in_house":false}
+{"key_id":"${ASC_API_KEY_ID}","issuer_id":"${ASC_ISSUER_ID}","key":"${KEY_CONTENT_B64}","is_key_content_base64":true,"in_house":false}
 EOF_KEY
 )
 PILOT_ARGS=(
