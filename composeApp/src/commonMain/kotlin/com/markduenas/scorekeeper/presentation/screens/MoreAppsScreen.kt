@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.markduenas.scorekeeper.appVersionName
 import com.markduenas.scorekeeper.data.AnalyticsService
 import org.koin.compose.koinInject
 
@@ -76,6 +77,15 @@ class MoreAppsScreen : Screen {
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val versionName = appVersionName()
+                if (versionName.isNotBlank()) {
+                    item {
+                        Text("Scorr v$versionName",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(12.dp))
+                    }
+                }
                 item {
                     Text("More apps by the same developer", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Spacer(Modifier.height(4.dp))
