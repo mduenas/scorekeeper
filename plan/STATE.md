@@ -7,7 +7,7 @@ links:
 
 ## Next steps
 
-<!-- none yet -->
+- [ ] Delete 1 merged branch(es): mduenas/redesigned-fishstick
 
 ## Notes
 
