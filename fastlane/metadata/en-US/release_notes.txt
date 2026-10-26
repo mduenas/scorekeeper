@@ -1,0 +1,1 @@
+Fixed template scoring bugs (golf, tennis, poker, UNO) and added 8 new game templates: Rummy, Hearts, Spades, Euchre, Dominoes, Scrabble, Table Tennis, and Horseshoes.
